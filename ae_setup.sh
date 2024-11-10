@@ -1,5 +1,5 @@
 #!/bin/bash 
-MKL_PATH=/home/dq55/intel/oneapi/mkl/latest/lib
+MKL_PATH=$1
 
 rm -rf build
 mkdir -p build
