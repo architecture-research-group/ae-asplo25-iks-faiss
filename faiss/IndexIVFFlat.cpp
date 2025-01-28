@@ -254,12 +254,12 @@ struct IVFFlatScanner : InvertedListScanner {
         }
     }
 
-
+    /*
     ~IVFFlatScanner() override {
         if (store_new_xi) {
             delete[] xi;
         }
-    }
+    }*/
 };
 
 template <bool use_sel>
