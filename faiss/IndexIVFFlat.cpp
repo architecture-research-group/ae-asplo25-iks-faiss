@@ -164,11 +164,11 @@ struct IVFFlatScanner : InvertedListScanner {
                 query_base + queries[i] * d,
                 d * float_size);
         }
-
+        
         if (store_new_xi) {
         delete[] xi;
     }
-
+        
         this->xi = new_xi;
         nx = queries.size();
         store_new_xi = true;
@@ -256,7 +256,12 @@ struct IVFFlatScanner : InvertedListScanner {
         }
     }
 
-
+    
+    ~IVFFlatScanner() override {
+        if (store_new_xi) {
+            delete[] xi;
+        }
+    }
 };
 
 template <bool use_sel>
