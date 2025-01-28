@@ -1,5 +1,7 @@
 #!/bin/bash 
-MKL_PATH=/home/dq55/intel/oneapi/mkl/latest/lib
+MKL_PATH=/opt/intel/oneapi/mkl/latest/lib
+
+sudo apt install -y swig libgflags-dev
 
 rm -rf build
 mkdir -p build
