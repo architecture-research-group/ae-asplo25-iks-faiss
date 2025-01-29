@@ -18,7 +18,6 @@
 #include <cinttypes>
 #include <cstdio>
 #include <limits>
-#include <memory>
 
 #include <faiss/utils/hamming.h>
 #include <faiss/utils/utils.h>
@@ -582,7 +581,7 @@ void IndexIVF::search_preassigned(
                         codes += jmin * code_size;
                         ids += jmin;
                     }
-                    
+
                     if (pmode == 4) {
                         nheap += scanner->scan_codes_batched(
                                 list_size, scodes.get(), ids, simi, idxi, k);
@@ -713,52 +712,55 @@ void IndexIVF::search_preassigned(
             for (int64_t i = 0; i < n; i++) {
                 reorder_result(distances + i * k, labels + i * k);
             }
-        } else if (pmode == 4) {
-        /// for this parallelization method, we parallelize over every
-        /// existing list, group together all the queries affiliated, and
-        /// scan all the queries of this list in one go.
-        #pragma omp single
-        {
-            keys_by_list.resize(nlist);
-            for (idx_t i = 0; i < nlist; i++) {
-                keys_by_list[i].reserve(nprobe * n / nlist);
-            }
-            for (idx_t il = 0; il < n; il++) {
-                for (idx_t ikey = 0; ikey < nprobe; ikey++) {
-                    keys_by_list[keys[il * nprobe + ikey]].emplace_back(il);
-                }
-            }
-            init_result_n(distances, labels, n);
-        }
-#pragma omp for schedule(dynamic)
-        for (idx_t il = 0; il < invlists->nlist; il++) {
-            std::vector<idx_t>& my_list = keys_by_list[il];
-            idx_t num_of_x = my_list.size();
-            if (num_of_x > 0) {
-                std::vector<idx_t> local_idx(k * num_of_x);
-                std::vector<float> local_dis(k * num_of_x);
-                init_result_n(local_dis.data(), local_idx.data(), num_of_x);
 
-                scanner->set_query_batched(x, my_list);
-                ndis += scan_one_list(
-                        il, 0, local_dis.data(), local_idx.data(),unlimited_list_size);
+
+        } else if (pmode == 4) {
+            /// for this parallelization method, we parallelize over every
+            /// existing list, group together all the queries affiliated, and
+            /// scan all the queries of this list in one go.
+#pragma omp single
+            {
+                keys_by_list.resize(nlist);
+                for (idx_t i = 0; i < nlist; i++) {
+                    keys_by_list[i].reserve(nprobe * n / nlist);
+                }
+                for (idx_t il = 0; il < n; il++) {
+                    for (idx_t ikey = 0; ikey < nprobe; ikey++) {
+                        keys_by_list[keys[il * nprobe + ikey]].emplace_back(il);
+                    }
+                }
+                init_result_n(distances, labels, n);
+            }
+#pragma omp for schedule(dynamic)
+            for (idx_t il = 0; il < invlists->nlist; il++) {
+                std::vector<idx_t>& my_list = keys_by_list[il];
+                idx_t num_of_x = my_list.size();
+                if (num_of_x > 0) {
+                    std::vector<idx_t> local_idx(k * num_of_x);
+                    std::vector<float> local_dis(k * num_of_x);
+                    init_result_n(local_dis.data(), local_idx.data(), num_of_x);
+                    
+                    scanner->set_query_batched(x, my_list);
+                    ndis += scan_one_list(
+                            il, 0, local_dis.data(), local_idx.data(), unlimited_list_size);
 #pragma omp critical
-                for (idx_t one_x = 0; one_x < num_of_x; one_x++) {
-                    float* simi = distances + my_list[one_x] * k;
-                    idx_t* idxi = labels + my_list[one_x] * k;
-                    add_local_results(
-                            local_dis.data() + one_x * k,
-                            local_idx.data() + one_x * k,
-                            simi,
-                            idxi);
+                    for (idx_t one_x = 0; one_x < num_of_x; one_x++) {
+                        float* simi = distances + my_list[one_x] * k;
+                        idx_t* idxi = labels + my_list[one_x] * k;
+                        add_local_results(
+                                local_dis.data() + one_x * k,
+                                local_idx.data() + one_x * k,
+                                simi,
+                                idxi);
+                    }
                 }
             }
-        }
 #pragma omp for schedule(dynamic)
-        for (idx_t i = 0; i < n; i++) {
-            reorder_result(distances + i * k, labels + i * k);
-        }
-    } else {
+            for (idx_t i = 0; i < n; i++) {
+                reorder_result(distances + i * k, labels + i * k);
+            }
+        } else {
+
             FAISS_THROW_FMT("parallel_mode %d not supported\n", pmode);
         }
     } // parallel section
@@ -1348,6 +1350,12 @@ IndexIVFStats indexIVF_stats;
  * InvertedListScanner
  *************************************************************************/
 
+ void InvertedListScanner::set_query_batched(
+    const float* query_base,
+    std::vector<idx_t>& queries) {
+FAISS_THROW_MSG("set_query_batched not implemented");
+}
+
 size_t InvertedListScanner::scan_codes(
         size_t list_size,
         const uint8_t* codes,
@@ -1426,37 +1434,16 @@ size_t InvertedListScanner::iterate_codes(
     return nup;
 }
 
-size_t InvertedListScanner::iterate_codes_batched(
-    InvertedListsIterator* it,
-    float* simi,
-    idx_t* idxi,
-    size_t k,
-    size_t& list_size) const {
-size_t nup = 0;
-list_size = 0;
+size_t InvertedListScanner::scan_codes_batched(
+    size_t n,
+    const uint8_t* codes,
+    const idx_t* ids,
+    float* distances,
+    idx_t* labels,
+    size_t k) const {
+FAISS_THROW_MSG("scan_codes_batched not implemented");
+return 0;
 
-if (!keep_max) {
-    for (; it->is_available(); it->next()) {
-        auto id_and_codes = it->get_id_and_codes();
-        float dis = distance_to_code(id_and_codes.second);
-        if (dis < simi[0]) {
-            maxheap_replace_top(k, simi, idxi, dis, id_and_codes.first);
-            nup++;
-        }
-        list_size++;
-    }
-} else {
-    for (; it->is_available(); it->next()) {
-        auto id_and_codes = it->get_id_and_codes();
-        float dis = distance_to_code(id_and_codes.second);
-        if (dis > simi[0]) {
-            minheap_replace_top(k, simi, idxi, dis, id_and_codes.first);
-            nup++;
-        }
-        list_size++;
-    }
-}
-return nup;
 }
 
 void InvertedListScanner::scan_codes_range(

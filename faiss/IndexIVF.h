@@ -436,7 +436,7 @@ struct IndexIVF : Index, IndexIVFInterface {
     size_t sa_code_size() const override;
 
     /** encode a set of vectors
-     * sa_encode will call encode_vector with include_listno=true
+     * sa_encode will call encode_vectors with include_listno=true
      * @param n      nb of vectors to encode
      * @param x      the vectors to encode
      * @param bytes  output array for the codes
@@ -473,7 +473,9 @@ struct InvertedListScanner {
     /// from now on we handle this query.
     virtual void set_query(const float* query_vector) = 0;
 
-    virtual void set_query_batched(const float* query_base, std::vector<idx_t>& queries);
+    virtual void set_query_batched(
+        const float* query_base,
+        std::vector<idx_t>& queries);
 
 
     /// following codes come from this inverted list
@@ -502,13 +504,14 @@ struct InvertedListScanner {
             idx_t* labels,
             size_t k) const;
 
+
 virtual size_t scan_codes_batched(
-size_t n,
-const uint8_t* codes,
-const idx_t* ids,
-float* distances,
-idx_t* labels,
-size_t k) const;
+        size_t n,
+        const uint8_t* codes,
+        const idx_t* ids,
+        float* distances,
+        idx_t* labels,
+        size_t k) const;
 
     // same as scan_codes, using an iterator
     virtual size_t iterate_codes(
