@@ -1,6 +1,9 @@
 #!/bin/bash 
 MKL_PATH=/opt/intel/oneapi/mkl/latest/lib
 
+sudo apt install -y swig libgflags-dev
+
+
 rm -rf build
 mkdir -p build
 cmake -B build \

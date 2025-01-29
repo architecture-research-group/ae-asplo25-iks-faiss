@@ -136,6 +136,18 @@ void update_res_ids(T* t, const size_t n, const idx_t* ids) {
     }
 }
 
+
+/// update heap array's id with the given id list,
+/// input heap should not contain previous results.
+template <class T>
+void update_res_ids(T* t, const size_t n, const idx_t* ids) {
+    idx_t* start = t->get_ids(0);
+    for (size_t i = 0; i < n; i++) {
+        if (start[i] >= 0)
+            start[i] = ids[start[i]];
+    }
+}
+
 template <MetricType metric, class C, bool use_sel>
 struct IVFFlatScanner : InvertedListScanner {
     size_t d;
@@ -147,7 +159,7 @@ struct IVFFlatScanner : InvertedListScanner {
         keep_max = is_similarity_metric(metric);
     }
 
-    const float* xi;
+    const float* xi = NULL;
     void set_query(const float* query) override {
         this->xi = query;
     }
@@ -167,6 +179,7 @@ struct IVFFlatScanner : InvertedListScanner {
             nx = queries.size();
             store_new_xi = true;
         }
+
     }
 
     void set_list(idx_t list_no, float /* coarse_dis */) override {
@@ -208,6 +221,7 @@ struct IVFFlatScanner : InvertedListScanner {
     }
 
     size_t scan_codes_batched(
+
             size_t list_size,
             const uint8_t* codes,
             const idx_t* ids,
@@ -226,6 +240,7 @@ struct IVFFlatScanner : InvertedListScanner {
         }
         return 0;
     }
+
 
     void scan_codes_range(
             size_t list_size,

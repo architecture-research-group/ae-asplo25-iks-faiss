@@ -477,6 +477,7 @@ struct InvertedListScanner {
         const float* query_base,
         std::vector<idx_t>& queries);
 
+
     /// following codes come from this inverted list
     virtual void set_list(idx_t list_no, float coarse_dis) = 0;
 
@@ -519,6 +520,14 @@ virtual size_t scan_codes_batched(
             idx_t* labels,
             size_t k,
             size_t& list_size) const;
+
+        // same as scan_codes, using an iterator
+    virtual size_t iterate_codes_batched(
+        InvertedListsIterator* iterator,
+        float* distances,
+        idx_t* labels,
+        size_t k,
+        size_t& list_size) const;
 
     /** scan a set of codes, compute distances to current query and
      * update results if distances are below radius

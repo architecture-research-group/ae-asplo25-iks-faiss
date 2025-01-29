@@ -350,6 +350,7 @@ void IndexIVF::search(
         std::vector<IndexIVFStats> stats(nt);
         std::mutex exception_mutex;
         std::string exception_string;
+        std::vector<std::vector<idx_t>> keys_by_list;
 
 #pragma omp parallel for if (nt > 1)
         for (idx_t slice = 0; slice < nt; slice++) {
@@ -540,8 +541,14 @@ void IndexIVF::search_preassigned(
                     std::unique_ptr<InvertedListsIterator> it(
                             invlists->get_iterator(key, inverted_list_context));
 
-                    nheap += scanner->iterate_codes(
+
+                    if (pmode == 4) {
+                        nheap += scanner->iterate_codes_batched(
                             it.get(), simi, idxi, k, list_size);
+                    } else {
+                        nheap += scanner->iterate_codes(
+                            it.get(), simi, idxi, k, list_size);
+                    }
 
                     return list_size;
                 } else {
@@ -706,6 +713,7 @@ void IndexIVF::search_preassigned(
                 reorder_result(distances + i * k, labels + i * k);
             }
 
+
         } else if (pmode == 4) {
             /// for this parallelization method, we parallelize over every
             /// existing list, group together all the queries affiliated, and
@@ -752,6 +760,7 @@ void IndexIVF::search_preassigned(
                 reorder_result(distances + i * k, labels + i * k);
             }
         } else {
+
             FAISS_THROW_FMT("parallel_mode %d not supported\n", pmode);
         }
     } // parallel section
@@ -1380,6 +1389,18 @@ size_t InvertedListScanner::scan_codes(
     return nup;
 }
 
+size_t InvertedListScanner::scan_codes_batched(
+    size_t n,
+    const uint8_t* codes,
+    const idx_t* ids,
+    float* distances,
+    idx_t* labels,
+    size_t k) const {
+FAISS_THROW_MSG("scan_codes_batched not implemented");
+return 0;
+}
+
+
 size_t InvertedListScanner::iterate_codes(
         InvertedListsIterator* it,
         float* simi,
@@ -1422,6 +1443,7 @@ size_t InvertedListScanner::scan_codes_batched(
     size_t k) const {
 FAISS_THROW_MSG("scan_codes_batched not implemented");
 return 0;
+
 }
 
 void InvertedListScanner::scan_codes_range(
