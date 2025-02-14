@@ -1400,6 +1400,16 @@ FAISS_THROW_MSG("scan_codes_batched not implemented");
 return 0;
 }
 
+size_t InvertedListScanner::iterate_codes_batched(
+    InvertedListsIterator* it,
+    float* simi,
+    idx_t* idxi,
+    size_t k,
+    size_t& list_size) const {
+FAISS_THROW_MSG("iterate_codes_batched not implemented");
+return 0;
+}
+
 
 size_t InvertedListScanner::iterate_codes(
         InvertedListsIterator* it,
@@ -1432,18 +1442,6 @@ size_t InvertedListScanner::iterate_codes(
         }
     }
     return nup;
-}
-
-size_t InvertedListScanner::scan_codes_batched(
-    size_t n,
-    const uint8_t* codes,
-    const idx_t* ids,
-    float* distances,
-    idx_t* labels,
-    size_t k) const {
-FAISS_THROW_MSG("scan_codes_batched not implemented");
-return 0;
-
 }
 
 void InvertedListScanner::scan_codes_range(
